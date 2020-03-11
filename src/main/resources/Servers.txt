@@ -1,5 +1,3 @@
 bank.local.Driver
 
-bank.sockets.Driver localhost 1234
-
 bank.network.DriverTCP localhost 1234

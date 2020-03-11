@@ -27,21 +27,22 @@ public class BankServer {
             while (true) {
                 Socket s = server.accept();
                 Thread t = new Thread(() -> {
-
                     try {
                         while (true) {
                             //process Input
                             DataInputStream inputStream = new DataInputStream(s.getInputStream());
                             DataOutputStream outputStream = new DataOutputStream(s.getOutputStream());
-                            if (inputStream.available() <= 0) {
+                            // XXX ich würde die beiden STreams ausserhalb der Schleife erzeugen und immer dieselben Instanzen verwenden,
+                            //     aber bezüglcih Funktionalität spielt dies keine Rolle
+//                            if (inputStream.available() <= 0) { // XXX dazu habe ich mich bereits geäussert.
                                 String response = processInput(inputStream.readUTF());
                                 if (!response.equals("")) {
                                     //send response
-                                    outputStream.writeUTF(response + "\r\n");
-                                    outputStream.flush();
+                                    outputStream.writeUTF(response + "\r\n");	// XXX hier solltne sie nich noch \r\n anhängen, das ist der Grund für den einen Fehler im Test.
+                                    outputStream.flush(); // XXX eigentlich ist ein flush nicht nötig.
                                     System.out.println("sent response: " + response);
-                                }
-                            }
+                                } // XXX und sonst? Da könnte man allenfalls abbrechen wenn ein leerer String kommt und dies als close interpretieren.
+//                            }
                         }
 
                     } catch (IOException e) {
@@ -67,7 +68,7 @@ public class BankServer {
                 System.out.println("sending account numbers");
                 return getAccountNumbers();
             case "createAccount":
-                return createAccount(input.substring(14));
+                return createAccount(input.substring(14)); // XXX statt 14 würde ich hier vielleicht "createAccount".size()+1 schreiben.
             case "closeAccount":
                 return closeAccount(arguments[1]);
             case "transfer":
@@ -92,7 +93,7 @@ public class BankServer {
     //getAccountNumbers - none - command: accounts, result: n "acc N" "acc N" "acc N"
     private static String getAccountNumbers() {
         Set<String> accounts = bank.getAccountNumbers();
-        if (accounts.size() == 0) return "0";
+        if (accounts.size() == 0) return "0"; // XXX dieser Spezialfall wäre nicht nötig, d.h. das wird auch vom code unten richtig behandelt.
         StringBuilder output = new StringBuilder();
         output.append(accounts.size());
         output.append(" ");
@@ -106,12 +107,12 @@ public class BankServer {
     //createAccount - name - command: createAccount, result: true "account Number" or false
     private static String createAccount(String name) {
         String accountNumber = bank.createAccount(name);
-        return "true " + accountNumber;
+        return "true " + accountNumber; // XXX könnte auch "true null" sein! Müsste auf Klientenseite entsprechend berücksichtigt werden.
     }
 
     //closeAccount - number - command: closeAccount, result: true or false
     private static String closeAccount(String number) {
-        boolean isClosed = bank.closeAccount(number);
+        boolean isClosed = bank.closeAccount(number);	 // XXX Variante: return "" + bank.closeAccount(number);
         return isClosed ? "true" : "false";
     }
 
@@ -120,7 +121,7 @@ public class BankServer {
         try {
             bank.transfer(bank.getAccount(from), bank.getAccount(to), amount);
         } catch (Exception e) {
-            return "false";
+            return "false";	// XXX hier sollte man aber noch zurückgeben welche Exception geworfen worden ist
         }
         return "true";
     }
@@ -128,9 +129,11 @@ public class BankServer {
     //getBalance - number - command: getBalance "", result: int
     private static String getBalance(String number) {
         try {
-            return String.valueOf(bank.getAccount(number).getBalance());
+            return String.valueOf(bank.getAccount(number).getBalance());	// XXX falls bank.getAccount(number) null ist dann führt dies zu einer NPE
+            																//     gilt analog bei allen folgnedne Methoden auch.
         } catch (IOException e) {
-            return "error";
+            return "error";	// XXX anstelle von return "error"  könnten sie auch auf Server-Seite eine RuntimeException werfen, denn das sollte ja
+            				//     (mit der lokalen Bank) nicht vorkommen.
         }
     }
 
@@ -158,7 +161,7 @@ public class BankServer {
             bank.getAccount(number).deposit(amount);
             return "true";
         } catch (IOException | InactiveException e) {
-            return "false";
+            return "false";	// XXX auch hier: Die Exception sollte zurückgegeben werden, z.B. return e.getType() oder so.
         }
     }
 

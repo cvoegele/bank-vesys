@@ -1,11 +1,15 @@
-apply plugin: 'java'
-apply plugin: 'application'
+plugins {
+    id 'java'
+    id 'application'
+    id 'idea'
+}
 
 repositories {
     jcenter()
+    flatDir { dirs 'lib' }
 }
 
-mainClassName = 'bank.gui.Client'
+mainClassName = 'bank.BankLauncher'
 
 sourceCompatibility = 11
 targetCompatibility = 11
@@ -31,10 +35,8 @@ dependencies {
 
 dependencies {
     implementation 'junit:junit:4.12'
+    compile ':bank-core:'
 }
-
-
-apply plugin: 'idea'
 
 idea.module.outputDir file("out/production/classes")
 

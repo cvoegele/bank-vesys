@@ -7,7 +7,6 @@ package bank.local;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -36,7 +35,7 @@ public class Driver implements bank.BankDriver {
     }
 
     public static class Bank implements bank.Bank {
-
+    	// XXX die Implementierung ist natürlich nicht thread-safe (aber das war auch nicht verlangt)
         private final Map<String, Account> accounts = new HashMap<>();
         private final String bankIdentifier = "OFS-";
 
@@ -57,7 +56,6 @@ public class Driver implements bank.BankDriver {
             Account account = accounts.get(number);
             if (account != null && account.isActive() && account.balance == 0) {
                 accounts.get(number).active = false;
-
                 return true;
             }
             return false;
@@ -83,7 +81,7 @@ public class Driver implements bank.BankDriver {
     }
 
     private static class Account implements bank.Account {
-        private String number;
+        private String number; // XXX ich würde number und owner final deklarieren.
         private String owner;
         private double balance;
         private boolean active = true;
