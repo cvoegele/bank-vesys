@@ -112,8 +112,7 @@ public class DriverTCP implements BankDriver {
 
         public static String[] processResponse(String response) {
             response = response.strip();
-            String[] strings = response.split(Pattern.quote(" "));
-            return strings;
+            return response.split(Pattern.quote(" "));
         }
 
         public void sendCommand(String command) throws IOException {
@@ -150,7 +149,7 @@ public class DriverTCP implements BankDriver {
             sendCommand("getOwner " + number);
             String response = receiveResponse();
 
-
+            System.out.println("received owner: " + response);
             if ("error".equals(response)) {
                 throw new IOException("received error");
             }

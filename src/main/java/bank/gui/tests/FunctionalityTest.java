@@ -166,6 +166,8 @@ public class FunctionalityTest implements BankTest {
 			name = "Peter Müller;junior";
 			id = bank.createAccount(name);
 			a = bank.getAccount(id);
+			String b = a.getOwner();
+			System.out.println(":"+b +" != "+ name+":");
 			if (!name.equals(a.getOwner())) {
 				msg = "not all names are properly supported";
 			}

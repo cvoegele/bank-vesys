@@ -1,7 +1,5 @@
 package bank.network;
 
-import bank.Account;
-import bank.Bank;
 import bank.InactiveException;
 import bank.OverdrawException;
 import bank.local.Driver;
@@ -11,8 +9,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 
 public class BankServer {
@@ -27,28 +23,31 @@ public class BankServer {
     public static void startServer() {
         int port = 1234;
         try (ServerSocket server = new ServerSocket(port)) {
-            System.out.println("Startet Echo Server on port " + port);
+            System.out.println("Startet Bank Server on port " + port);
             while (true) {
                 Socket s = server.accept();
                 Thread t = new Thread(() -> {
+
                     try {
                         while (true) {
                             //process Input
                             DataInputStream inputStream = new DataInputStream(s.getInputStream());
                             DataOutputStream outputStream = new DataOutputStream(s.getOutputStream());
-                            String response = processInput(inputStream.readUTF());
-                            if (!response.equals("")) {
-                                //send response
-                                outputStream.writeUTF(response + "\r\n");
-                                outputStream.flush();
-                                System.out.println("sent response" + response);
+                            if (inputStream.available() <= 0) {
+                                String response = processInput(inputStream.readUTF());
+                                if (!response.equals("")) {
+                                    //send response
+                                    outputStream.writeUTF(response + "\r\n");
+                                    outputStream.flush();
+                                    System.out.println("sent response: " + response);
+                                }
                             }
                         }
 
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-                    System.out.println("done serving " + s.isClosed());
+
                 });
                 t.start();
             }
@@ -58,7 +57,7 @@ public class BankServer {
     }
 
     private static String processInput(String input) {
-        System.out.println("received command " + input);
+        System.out.println("received command: " + input);
         String[] arguments = input.split("\\s+");
         if (arguments.length == 0) return "bad command sent";
         String command = arguments[0];
@@ -119,7 +118,7 @@ public class BankServer {
     //transfer - numberFrom, numberTo, amount - command: transfer "" "" int, result : true or false
     private static String transfer(String from, String to, double amount) {
         try {
-            transfer(bank.getAccount(from).getNumber(), bank.getAccount(to).getNumber(), amount);
+            bank.transfer(bank.getAccount(from), bank.getAccount(to), amount);
         } catch (Exception e) {
             return "false";
         }
