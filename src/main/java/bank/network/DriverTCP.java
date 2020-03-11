@@ -57,24 +57,24 @@ public class DriverTCP implements BankDriver {
 
         @Override
         public String createAccount(String owner) throws IOException {
-            sendCommand("createAccount " + owner);
+            out.writeUTF("createAccount " + owner);
             String[] response = processResponse(receiveResponse());
             if ("true".equals(response[0])) {
-                return response[1];	// XXX response[1] könnte auch "null" sein, dann müsste null zurückgegeben werden.
+                return response[1];    // XXX response[1] könnte auch "null" sein, dann müsste null zurückgegeben werden.
             }
             throw new IOException("did not receive answer");
         }
 
         @Override
         public boolean closeAccount(String number) throws IOException {
-            sendCommand("closeAccount " + number);
+            out.writeUTF("closeAccount " + number);
             String[] response = processResponse(receiveResponse());
             return "true".equals(response[0]);
         }
 
         @Override
         public Set<String> getAccountNumbers() throws IOException {
-            sendCommand("accounts");
+            out.writeUTF("accounts");
             String response = receiveResponse();
             System.out.println(response);
 
@@ -83,7 +83,7 @@ public class DriverTCP implements BankDriver {
             Set<String> accounts = new HashSet<>();
 
             for (int i = 1; i < Integer.parseInt(parts[0]); i++) {
-            	// XXX jetzt wird in JEDEM Schleifendurchgang Integer.parseInt(parts[0]) aufgerufen, das finde ich suboptimal
+                // XXX jetzt wird in JEDEM Schleifendurchgang Integer.parseInt(parts[0]) aufgerufen, das finde ich suboptimal
                 accounts.add(parts[i]);
             }
 
@@ -92,7 +92,11 @@ public class DriverTCP implements BankDriver {
 
         @Override
         public Account getAccount(String number) throws IOException {
-            return new Account(number, in, out);
+            out.writeUTF("isAccount " + number);
+            String response = receiveResponse();
+            if ("true".equals(response))
+                return new Account(number, in, out);
+            return null;
             // XXX fast, denn falls die Kontonummer nicht gültig ist dann sollte hier null zurückgegeben werden, also auf Server fragen ob Konto existiert.
         }
 
@@ -106,7 +110,7 @@ public class DriverTCP implements BankDriver {
             // XXX ok, das sind Optimierungen, aber auf dem Server könnte balance bereits geändert haben nach dieser Abfrage,
             //     daher sind diese zusätzlichen Round-Trips gar nicht sinnvoll (also keine wirkliche Optimierung)
 
-            sendCommand("transfer " + a.getNumber() + " " + b.getNumber() + " " + amount);
+            out.writeUTF("transfer " + a.getNumber() + " " + b.getNumber() + " " + amount);
             String[] response = processResponse(receiveResponse());
             if ("true".equals(response[0])) {
             } else {
@@ -121,10 +125,6 @@ public class DriverTCP implements BankDriver {
             return response.split(Pattern.quote(" "));
         }
 
-        public void sendCommand(String command) throws IOException {
-            out.writeUTF(command);
-        }
-
         public String receiveResponse() throws IOException {
             return in.readUTF();
         }
@@ -133,7 +133,7 @@ public class DriverTCP implements BankDriver {
 
     public static class Account implements bank.Account {
 
-        String number;	// XXX würde ich final deklarieren.
+        String number;    // XXX würde ich final deklarieren.
 
         private final DataInputStream in;
         private final DataOutputStream out;
@@ -151,13 +151,13 @@ public class DriverTCP implements BankDriver {
 
         @Override
         public String getOwner() throws IOException {
-            sendCommand("getOwner " + number);
+            out.writeUTF("getOwner " + number);
             String response = receiveResponse();
 
             System.out.println("received owner: " + response);
             if ("error".equals(response)) {
-            	// XXX dann kann ich kein Konto für den Herrn "error" eröffnen ;-) 
-            	//     Ah doch, denn der Kontoname ist dann "error\r\n" bzw. error\r\n\r\n
+                // XXX dann kann ich kein Konto für den Herrn "error" eröffnen ;-)
+                //     Ah doch, denn der Kontoname ist dann "error\r\n" bzw. error\r\n\r\n
                 throw new IOException("received error");
             }
 
@@ -166,7 +166,7 @@ public class DriverTCP implements BankDriver {
 
         @Override
         public boolean isActive() throws IOException {
-            sendCommand("isActive " + number);
+            out.writeUTF("isActive " + number);
             String[] response = Bank.processResponse(receiveResponse());
 
             if ("error".equals(response[0])) {
@@ -184,7 +184,7 @@ public class DriverTCP implements BankDriver {
             // XXX diese Tests sollten auf Serverseite gemacht werden (werden sie auch wenn sie dann deposit xxx yyyy an den Server schicken,
             //     d.h. sie machen unnötige round-trips.
 
-            sendCommand("deposit " + number + " " + amount);
+            out.writeUTF("deposit " + number + " " + amount);
             String[] response = Bank.processResponse(receiveResponse());
 
             if ("error".equals(response[0])) {
@@ -199,7 +199,7 @@ public class DriverTCP implements BankDriver {
             if (!isActive()) throw new InactiveException("this account is not active");
             if (getBalance() - amount < 0) throw new OverdrawException("balance not sufficient");
 
-            sendCommand("withdraw " + number + " " + amount);
+            out.writeUTF("withdraw " + number + " " + amount);
             String[] response = Bank.processResponse(receiveResponse());
 
             if ("error".equals(response[0])) {
@@ -209,20 +209,13 @@ public class DriverTCP implements BankDriver {
 
         @Override
         public double getBalance() throws IOException {
-            sendCommand("getBalance " + number);
+            out.writeUTF("getBalance " + number);
             String[] response = Bank.processResponse(receiveResponse());
 
             if ("error".equals(response[0])) {
                 throw new IOException("received error");
             }
             return Double.parseDouble(response[0]);
-        }
-
-
-        public void sendCommand(String command) throws IOException {
-        	// XXX diese Methode kommt doppelt vor, aber anstelle des sendCommand können sie auch gerade out.writeUTF(command) aufrufen, denn
-        	//     1. das Hinzufügen von \r\n macht keinen Sinn / braucht es nicht
-            out.writeUTF(command);
         }
 
         public String receiveResponse() throws IOException {
