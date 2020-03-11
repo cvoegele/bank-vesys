@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="bank-core-sources">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/lib/bank-core.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$PROJECT_DIR$/lib/bank-core-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

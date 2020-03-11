@@ -11,10 +11,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import bank.Bank;
+import bank.BankDriver;
 import bank.InactiveException;
 import bank.OverdrawException;
 
-public class Driver implements bank.BankDriver {
+public class Driver implements BankDriver {
     private Bank bank = null;
 
     @Override
