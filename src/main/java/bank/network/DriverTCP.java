@@ -36,7 +36,7 @@ public class DriverTCP implements BankDriver {
         if (s != null) {
             s.close();
         }
-        // XXX ich würde hier noch die bank-Referenz auf null setzen.
+        bank = null;
         System.out.println("disconnected");
     }
 
@@ -122,10 +122,7 @@ public class DriverTCP implements BankDriver {
         }
 
         public void sendCommand(String command) throws IOException {
-            out.writeUTF(command + "\r\n");	// XXX das \r\n wäre nicht nötig! Und vielleicht ist das auch der Fehler des Tests, denn ihre Namen haben nun 
-            								//     zusätzlich noch ein \r\n am Ende.
-            out.flush();	// XXX nicht nötig solange sie keinen BufferedStream verwenden, aber vielleicht wäre dies noch ein interessanter Test:
-            				//     Zeitmessung mit und ohne BufferedStreams (und dann brauchen Sie das flush wieder....)
+            out.writeUTF(command);
         }
 
         public String receiveResponse() throws IOException {
@@ -225,9 +222,7 @@ public class DriverTCP implements BankDriver {
         public void sendCommand(String command) throws IOException {
         	// XXX diese Methode kommt doppelt vor, aber anstelle des sendCommand können sie auch gerade out.writeUTF(command) aufrufen, denn
         	//     1. das Hinzufügen von \r\n macht keinen Sinn / braucht es nicht
-        	//     2. das out.flush braucht es (aktuell) auch nicht.
-            out.writeUTF(command + "\r\n"); // XXX dass Sie da \r\n anhängen macht keinen Sinn.
-            out.flush();
+            out.writeUTF(command);
         }
 
         public String receiveResponse() throws IOException {

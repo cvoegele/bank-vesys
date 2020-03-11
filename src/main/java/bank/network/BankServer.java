@@ -38,8 +38,7 @@ public class BankServer {
                                 String response = processInput(inputStream.readUTF());
                                 if (!response.equals("")) {
                                     //send response
-                                    outputStream.writeUTF(response + "\r\n");	// XXX hier solltne sie nich noch \r\n anhängen, das ist der Grund für den einen Fehler im Test.
-                                    outputStream.flush(); // XXX eigentlich ist ein flush nicht nötig.
+                                    outputStream.writeUTF(response);
                                     System.out.println("sent response: " + response);
                                 } // XXX und sonst? Da könnte man allenfalls abbrechen wenn ein leerer String kommt und dies als close interpretieren.
 //                            }
