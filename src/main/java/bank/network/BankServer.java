@@ -126,7 +126,7 @@ public class BankServer {
         try {
             bank.transfer(bank.getAccount(from), bank.getAccount(to), amount);
         } catch (Exception e) {
-            return "false " + e.toString();
+            return e.getClass().toString();
         }
         return "true";
     }
@@ -153,7 +153,7 @@ public class BankServer {
                 return acc.getOwner();
             return "Account not present";
         } catch (IOException e) {
-            return e.toString();
+            return e.getClass().toString();
         }
     }
 
@@ -181,7 +181,7 @@ public class BankServer {
             }
 
         } catch (IOException | InactiveException e) {
-            return e.toString();
+            return e.getClass().toString();
         }
     }
 
@@ -196,7 +196,7 @@ public class BankServer {
                 return "false";
             }
         } catch (OverdrawException | InactiveException | IOException e) {
-            return e.toString();
+            return e.getClass().toString();
         }
     }
 

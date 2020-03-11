@@ -3,7 +3,9 @@ package bank.network;
 import bank.*;
 
 import java.io.*;
+import java.lang.reflect.Constructor;
 import java.net.Socket;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -60,7 +62,7 @@ public class DriverTCP implements BankDriver {
             out.writeUTF("createAccount " + owner);
             String[] response = processResponse(receiveResponse());
             if ("true".equals(response[0])) {
-                return response[1];    // XXX response[1] könnte auch "null" sein, dann müsste null zurückgegeben werden.
+                return response[1];
             }
             throw new IOException("did not receive answer");
         }
@@ -80,14 +82,7 @@ public class DriverTCP implements BankDriver {
 
             String[] parts = processResponse(response);
 
-            Set<String> accounts = new HashSet<>();
-
-            for (int i = 1; i < Integer.parseInt(parts[0]); i++) {
-                // XXX jetzt wird in JEDEM Schleifendurchgang Integer.parseInt(parts[0]) aufgerufen, das finde ich suboptimal
-                accounts.add(parts[i]);
-            }
-
-            return accounts;
+            return new HashSet<>(Arrays.asList(parts).subList(1, Integer.parseInt(parts[0])));
         }
 
         @Override
@@ -97,25 +92,18 @@ public class DriverTCP implements BankDriver {
             if ("true".equals(response))
                 return new Account(number, in, out);
             return null;
-            // XXX fast, denn falls die Kontonummer nicht gültig ist dann sollte hier null zurückgegeben werden, also auf Server fragen ob Konto existiert.
         }
 
         @Override
         public void transfer(bank.Account a, bank.Account b, double amount) throws IOException, IllegalArgumentException, OverdrawException, InactiveException {
 
             if (amount < 0) throw new IllegalArgumentException("amount is not allowed to be negative");
-            if (!a.isActive() || !b.isActive())
-                throw new InactiveException("one of the accounts involved is not active");
-            if (a.getBalance() - amount < 0) throw new OverdrawException("balance not sufficient");
-            // XXX ok, das sind Optimierungen, aber auf dem Server könnte balance bereits geändert haben nach dieser Abfrage,
-            //     daher sind diese zusätzlichen Round-Trips gar nicht sinnvoll (also keine wirkliche Optimierung)
 
             out.writeUTF("transfer " + a.getNumber() + " " + b.getNumber() + " " + amount);
-            String[] response = processResponse(receiveResponse());
-            if ("true".equals(response[0])) {
-            } else {
-                throw new IOException("received false");
-                // XXX könnte auch eine OverdrawException oder eine  InactiveException sein, da erst nach obiger Abfrage das Konto auf Serverseite geändert worden ist.
+            String response = receiveResponse();
+            if (!"true".equals(response)) {
+               if ("class bank.OverdrawException".equals(response)) throw new OverdrawException("insufficient funds");
+               if ("class bank.InactiveException".equals(response)) throw new InactiveException("the account is inactive");
             }
 
         }
@@ -133,7 +121,7 @@ public class DriverTCP implements BankDriver {
 
     public static class Account implements bank.Account {
 
-        String number;    // XXX würde ich final deklarieren.
+        private final String number;
 
         private final DataInputStream in;
         private final DataOutputStream out;
@@ -154,10 +142,7 @@ public class DriverTCP implements BankDriver {
             out.writeUTF("getOwner " + number);
             String response = receiveResponse();
 
-            System.out.println("received owner: " + response);
-            if ("error".equals(response)) {
-                // XXX dann kann ich kein Konto für den Herrn "error" eröffnen ;-)
-                //     Ah doch, denn der Kontoname ist dann "error\r\n" bzw. error\r\n\r\n
+            if ("class java.io.IOException".equals(response)) {
                 throw new IOException("received error");
             }
 
@@ -180,15 +165,12 @@ public class DriverTCP implements BankDriver {
         public void deposit(double amount) throws IOException, IllegalArgumentException, InactiveException {
 
             if (amount < 0) throw new IllegalArgumentException("amount is not allowed to be negative");
-            if (!isActive()) throw new InactiveException("this account is not active");
-            // XXX diese Tests sollten auf Serverseite gemacht werden (werden sie auch wenn sie dann deposit xxx yyyy an den Server schicken,
-            //     d.h. sie machen unnötige round-trips.
 
             out.writeUTF("deposit " + number + " " + amount);
-            String[] response = Bank.processResponse(receiveResponse());
+            String response = receiveResponse();
 
-            if ("error".equals(response[0])) {
-                throw new IOException("received error");
+            if (!"true".equals(response)) {
+                if ("class bank.InactiveException".equals(response)) throw new InactiveException("the account is inactive");
             }
         }
 
@@ -196,14 +178,13 @@ public class DriverTCP implements BankDriver {
         public void withdraw(double amount) throws IOException, IllegalArgumentException, OverdrawException, InactiveException {
 
             if (amount < 0) throw new IllegalArgumentException("amount is not allowed to be negative");
-            if (!isActive()) throw new InactiveException("this account is not active");
-            if (getBalance() - amount < 0) throw new OverdrawException("balance not sufficient");
 
             out.writeUTF("withdraw " + number + " " + amount);
-            String[] response = Bank.processResponse(receiveResponse());
+            String response = receiveResponse();
 
-            if ("error".equals(response[0])) {
-                throw new IOException("received error");
+            if (!"true".equals(response)) {
+                if ("class bank.OverdrawException".equals(response)) throw new OverdrawException("insufficient funds");
+                if ("class bank.InactiveException".equals(response)) throw new InactiveException("the account is inactive");
             }
         }
 
