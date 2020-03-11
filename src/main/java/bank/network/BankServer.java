@@ -33,15 +33,15 @@ public class BankServer {
                             //process Input
                             DataInputStream inputStream = new DataInputStream(s.getInputStream());
                             DataOutputStream outputStream = new DataOutputStream(s.getOutputStream());
-                            if (inputStream.available() <= 0) {
+//                            if (inputStream.available() <= 0) {
                                 String response = processInput(inputStream.readUTF());
                                 if (!response.equals("")) {
                                     //send response
                                     outputStream.writeUTF(response + "\r\n");
-                                    outputStream.flush();
+                                    outputStream.flush(); // XXX eigentlich ist ein flush nicht nötig.
                                     System.out.println("sent response: " + response);
                                 }
-                            }
+//                            }
                         }
 
                     } catch (IOException e) {
