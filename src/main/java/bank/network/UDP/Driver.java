@@ -27,11 +27,11 @@ public class Driver implements BankDriver {
 
     @Override
     public void disconnect() throws IOException {
-        socket.close();
+        socket.close(); // XXX hier sollte auch noch die bank-Referenz auf null gesetzt werden.
     }
 
     private static BankPackage sendRequest(DatagramSocket socket, BankPackage bankPackage) throws IOException {
-        //i wish this code was more readable
+        //i wish this code was more readable // XXX :-) Finde ich nicht so schlimm. Das Paket wird 5 mal ausgeliefert.
         try {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             ObjectOutputStream ous = new ObjectOutputStream(bos);
@@ -41,14 +41,15 @@ public class Driver implements BankDriver {
             byte[] buf = bos.toByteArray();
 
             var packet = new DatagramPacket(buf, buf.length,
-                    InetAddress.getByName("localhost"), 4711);
+                    InetAddress.getByName("localhost"), 4711); // XXX bzw. die Paramete rhost und port sollten hier verwendet werden.
 
-            socket.send(packet);
+            socket.send(packet); // XXX ich würde das in die Schleife rein nehmen, dann müsste nicht auch noch ein Aufruf im catch-Block erfolgen.
             int packetsSent = 0;
             while (packetsSent < 5) {
                 try {
-                    socket.setSoTimeout(5000);
-                    DatagramPacket responseShell = new DatagramPacket(new byte[100000], 100000);
+                    socket.setSoTimeout(5000); // XXX das könnte auch bereits im Connect gesetzt werden.
+                    DatagramPacket responseShell = new DatagramPacket(new byte[100000], 100000); // XXX da wird jetzt bei JEDEM Request ein entsprechnedes Byte-Array erzeugt, da könnte man immer dasselbe DatagramPacket verwenden, wie sie das auf dem Server ja auch machen.
+                    
                     socket.receive(responseShell); //will throw if no response
 
                     //received response
@@ -59,6 +60,10 @@ public class Driver implements BankDriver {
                     if (obj instanceof BankPackage) {
                         //check if response to this
                         if (bankPackage.isResponse((BankPackage) obj)) {
+                        	// XXX richtig. Allerdings sind all ihre Werte "res" initial 0 und dann bei der Antwort 1, d.h. eine schwache Prüfung. 
+                        	//     Man könnte auch sagen dass es gar keine Prüfung braucht. Ein connect auf dem Socket wäre vielleicht noch sinnvoll
+                        	//     so dass nur noch Pakete vom Ziel-Host akzeptiert werden.
+                        	
                             //correct response sent by bank
                             System.out.println(((BankPackage) obj).toString());
                             return (BankPackage) obj;
@@ -87,7 +92,7 @@ public class Driver implements BankDriver {
 
     public static class Bank implements bank.Bank {
 
-        DatagramSocket socket;
+        DatagramSocket socket; // XXX würde ich private und final deklarieren.
 
         public Bank(DatagramSocket socket) {
             this.socket = socket;
@@ -152,12 +157,13 @@ public class Driver implements BankDriver {
                 if (e instanceof IllegalArgumentException) throw (IllegalArgumentException) e;
                 if (e instanceof OverdrawException) throw (OverdrawException) e;
                 if (e instanceof InactiveException) throw (InactiveException) e;
+                // XXX e könnte auch eine NPE sein, und diese wird nicht abgefangen. OK, wenn es von hier aufgerufen wird dann sollte das Kont ja auf dem Server existieren, d.h. NPE darf eigentlich nciht auftreten.
             }
         }
     }
 
     public static class Account implements bank.Account {
-
+    	// XXX würde ich beide private und final deklarieren.
         DatagramSocket socket;
         String number;
 
@@ -168,7 +174,7 @@ public class Driver implements BankDriver {
 
 
         @Override
-        public String getNumber() throws IOException {
+        public String getNumber() throws IOException { // XXX die Deklaration "throws IOException" ist hier nicht nötig.
             return number;
         }
 

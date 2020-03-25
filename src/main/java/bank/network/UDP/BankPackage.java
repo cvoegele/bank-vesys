@@ -6,15 +6,19 @@ import java.util.Objects;
 import java.util.Set;
 
 public class BankPackage implements Serializable {
+	// XXX die Felder sind alle öffentlich und sie definieren auch noch Getter-Methoden. Ich würde die Felder privat (und wo möglich final) deklarieren.
+	//     Variante wäre referenzen auf Immutables als public final zu deklarieren (dann braucht es keine Setter mehr).
 
     public int res;
 
     //request parameter
+    // XXX die Request-Parameter könnte man alle final deklarieren.
     public String command;
     public String account;
     public String counterAccount;
-    public Double amount;
+    public Double amount; // XXX wieso eigentlich ein Double und nicht ein double? OK, so können sie auch das Fehlen des Wertes abbilden.
     public Date date; //fully identifies a request to certain time, else you could not send the same request after another
+    // XXX Variante wäre, dass man neben der Zeit auch noch den Klienten (Socket-Adresse) speichert um unterschiedliche Reqeusts zu unterscheiden.
 
     //response parameter
     public boolean status = true; //if request was generally ok
@@ -27,11 +31,12 @@ public class BankPackage implements Serializable {
         this.account = account;
         this.counterAccount = counterAccount;
         this.amount = amount;
-        res = 0;
+        res = 0; // XXX ist das immer 0? 
         date = new Date();
     }
 
-    public void incrementRes() {
+    public void incrementRes() {	// XXX braucht es das? Man könnte prüfen ob die ID dieselbe ist wie jene die man geschickt hat. So sieht man wenigstens dass die Meldung bearbeitet worden ist.
+    								//     Wenn es gleich wäre dann würde im folgenden Vergleih this.res == response.res geprüft werden.
         res++;
     }
 

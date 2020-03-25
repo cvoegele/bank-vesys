@@ -34,8 +34,11 @@ public class Server {
                 InetAddress address = requestPacket.getAddress();
                 int port = requestPacket.getPort();
                 int len = requestPacket.getLength();
-                int offset = requestPacket.getOffset();
+                int offset = requestPacket.getOffset(); // XXX wird gar nicht verwendet.
                 byte[] data = requestPacket.getData();
+                
+                // XXX nach dem Aufruf ist data.length immer 1000000, aber das spielt keine Rolle da einfach die nötigen Daten bei readObject ausgelesen werden.
+                //     getData liefert einfach die Referenz auf den byte[], aber das ist OK so!
 
                 //read request object
                 ObjectInputStream bis = new ObjectInputStream(new ByteArrayInputStream(data));
@@ -47,8 +50,11 @@ public class Server {
 
                     //received requests is new --> still needs to be handled
                     if (!requests.contains(bankPackage)) {
-                        requests.add(bankPackage);
+                        requests.add(bankPackage); // XXX ok, und auf diesem Objekt wird dann die Antwort geschrieben.
                         BankPackage responsePackage = processRequest(bankPackage);
+                        // XXX das processRequest gefällt mir von der SIgnatur her nicht, d.h. es sieht so aus als ob ein (neues?) Objekt zurückkommt, und daher
+                        //     hätte ich erwartet dass die Response irgendwo gespeichert wird. Aber da bankPackage und responsePackage auf dasselbe Objekt zeigen
+                        //     läuft alles richtig, aber das sieht man der Schnittstelle nicht an.
 
                         //send response
                         //increment Response Counter
@@ -67,9 +73,12 @@ public class Server {
                         socket.send(responsePacket);
                     } else {
                         //we need to send the conformation again
-                        BankPackage responsePackage = new BankPackage(bankPackage.getCommand(),bankPackage.getAccount(),bankPackage.getCounterAccount(),bankPackage.getAmount());
+                        BankPackage responsePackage = new BankPackage(bankPackage.getCommand(),bankPackage.getAccount(),bankPackage.getCounterAccount(),bankPackage.getAmount()); // XXX da würde sich ein copy-Konstruktor aufdrängen/anbieten.
                         responsePackage.setDate(bankPackage.getDate()); //important for identification
-
+                        // XXX Frage: Warum ein neues BankPackage? Sie könnten ja einfach nochmals den in der Liste gespeicherten Request zurückschicken, der 
+                        //     enthält ja die Antwort. Ws sie jetzt zurückschicken ist die Anfrage ohne die Antwort
+                        // XXX vom code her ist das Schicken identisch. Es genügt wenn Sie oben die Antwort bereitstellen (entweder berechnen oder auslesen) und diese dann mit demselben COde zurückschicken.
+                        
                         ByteArrayOutputStream bos = new ByteArrayOutputStream();
                         ObjectOutputStream ous = new ObjectOutputStream(bos);
                         ous.writeObject(responsePackage);
@@ -106,6 +115,7 @@ public class Server {
                     request.setStatus(true);
                     localBank.getAccount(request.getAccount()).deposit(request.getAmount());
                 } catch (Exception e) {
+                	// XXX gut, damit wird auch eine mögliche NPE abgefangen.
                     request.setStatus(false);
                     request.setE(e);
                 }
@@ -117,7 +127,7 @@ public class Server {
                 break;
             case "GETBALANCE":
                 try {
-                    double balance = localBank.getAccount(request.getAccount()).getBalance();
+                    double balance = localBank.getAccount(request.getAccount()).getBalance(); // XXX das könnte eine NPE werfen die NICHT abgefangen wird! Bei getOwner haben sie diesen Fall explizit abgefangen.
                     request.setResponse(String.valueOf(balance));
                     request.setStatus(true);
                 } catch (IOException e) {
@@ -145,7 +155,7 @@ public class Server {
                 break;
             case "ISACTIVE":
                 try {
-                    boolean active = localBank.getAccount(request.getAccount()).isActive();
+                    boolean active = localBank.getAccount(request.getAccount()).isActive(); // XXX gefahr NPE
                     request.setStatus(active);
                 } catch (IOException e) {
                     request.setStatus(false);
@@ -156,7 +166,7 @@ public class Server {
                 Account account = localBank.getAccount(request.getAccount());
                 Account counterAccount = localBank.getAccount(request.getCounterAccount());
                 try {
-                    request.setStatus(true);
+                    request.setStatus(true); // XXX :-) ich würde den Status nach dem transfer auf true setzen.
                     localBank.transfer(account, counterAccount, request.getAmount());
                 } catch (Exception e) {
                     request.setStatus(false);
