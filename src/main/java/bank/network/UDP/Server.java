@@ -26,16 +26,16 @@ public class Server {
         try (DatagramSocket socket = new DatagramSocket(4711)) {
             System.out.println(socket.getLocalAddress());
             System.out.println(socket.getLocalPort());
-            DatagramPacket packet = new DatagramPacket(new byte[PACKAGE_SIZE], PACKAGE_SIZE);
+            DatagramPacket requestPacket = new DatagramPacket(new byte[PACKAGE_SIZE], PACKAGE_SIZE);
 
             while (true) {
-                socket.receive(packet);
+                socket.receive(requestPacket);
 
-                InetAddress address = packet.getAddress();
-                int port = packet.getPort();
-                int len = packet.getLength();
-                int offset = packet.getOffset();
-                byte[] data = packet.getData();
+                InetAddress address = requestPacket.getAddress();
+                int port = requestPacket.getPort();
+                int len = requestPacket.getLength();
+                int offset = requestPacket.getOffset();
+                byte[] data = requestPacket.getData();
 
                 //read request object
                 ObjectInputStream bis = new ObjectInputStream(new ByteArrayInputStream(data));
@@ -60,16 +60,27 @@ public class Server {
                         ous.close();
                         ous.flush();
                         byte[] bufResponse = bos.toByteArray();
-                        DatagramPacket response = new DatagramPacket(bufResponse, bufResponse.length, address, port);
-
-                        //set new content to package
-                   /* packet.setAddress(address);
-                    packet.setData(buf);*/
-                        //packet.setLength(buf.length);
+                        DatagramPacket responsePacket = new DatagramPacket(bufResponse, bufResponse.length, address, port);
 
                         //send response
                         System.out.println("sent response" + responsePackage.toString());
-                        socket.send(response);
+                        socket.send(responsePacket);
+                    } else {
+                        //we need to send the conformation again
+                        BankPackage responsePackage = new BankPackage(bankPackage.getCommand(),bankPackage.getAccount(),bankPackage.getCounterAccount(),bankPackage.getAmount());
+                        responsePackage.setDate(bankPackage.getDate()); //important for identification
+
+                        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                        ObjectOutputStream ous = new ObjectOutputStream(bos);
+                        ous.writeObject(responsePackage);
+                        ous.close();
+                        ous.flush();
+                        byte[] bufResponse = bos.toByteArray();
+                        DatagramPacket responsePacket = new DatagramPacket(bufResponse, bufResponse.length, address, port);
+
+                        //send response
+                        System.out.println("sent second response" + responsePackage.toString());
+                        socket.send(responsePacket);
                     }
                 }
 
