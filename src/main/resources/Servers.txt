@@ -3,3 +3,4 @@ bank.local.Driver
 bank.network.DriverTCP localhost 1234
 
 bank.network.UDP.Driver localhost 4711
+bank.graphql.client.GraphQLDriver localhost 8080

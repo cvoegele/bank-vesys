@@ -12,19 +12,10 @@ import java.net.http.HttpResponse;
 
 public class ShopClient {
 	
-	static String query1 = "query {" + 
-			"  product(id: 2) {" + 
-			"    id" + 
-			"    title" + 
-			"    ratings {" + 
-			"      score" + 
-			"      customer {" + 
-			"      	 name" + 
-			"        ratings {" + 
-			"          id" + 
-			"        }" + 
-			"      }" + 
-			"    }" + 
+	static String query1 = "query {" +
+			"  account(number: \"OFS-0\") {" +
+			"    number" +
+			"    owner" +
 			"  }" + 
 			"}";
 

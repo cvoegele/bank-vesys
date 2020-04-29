@@ -1,0 +1,24 @@
+type Account {
+    number: ID!
+    owner:String!
+    active: Boolean!
+    balance: Float!
+}
+
+type Query {
+    accounts : [Account!]!
+    account(number: ID!) : Account
+}
+
+type Mutation {
+    createAccount(owner: String!): Account!
+    closeAccount(number: String!): Boolean!
+    deposit(number: String!, amount: Float!): String!
+    withdraw(number: String!, amount: Float!): String!
+    transfer(from: String!, to: String!, amount: Float!) : String!
+}
+
+schema {
+    query: Query
+    mutation: Mutation
+}
