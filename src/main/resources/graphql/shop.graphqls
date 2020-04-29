@@ -1,0 +1,46 @@
+type Product {
+	id: ID!
+	title: String!
+	description: String!
+	imageUrl: String!
+	ratings: [Rating]!
+	averageRatingScore: Float
+}
+
+type Customer {
+	id: ID!
+	name: String!
+	ratings: [Rating]!
+}
+
+type Rating {
+	id: ID!
+	product: Product
+	customer: Customer
+	score: Int!
+	comment: String!
+}
+
+type Query {
+	products : [Product!]!
+	product(id: ID!): Product
+}
+
+
+input ProductInput {
+	title: String!
+	description: String!
+	imageUrl: String!
+}
+
+type Mutation {
+	rateProduct(productId: ID!, customerId: ID!, score: Int!, comment: String!) : Rating!
+
+	createProduct(product: ProductInput!) : Product!
+	updateProduct(id: ID!, product: ProductInput!) : Product
+}
+
+schema {
+	query: Query
+	mutation: Mutation
+}
