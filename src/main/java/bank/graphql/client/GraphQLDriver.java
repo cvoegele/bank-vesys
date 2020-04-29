@@ -1,7 +1,6 @@
 package bank.graphql.client;
 
 import bank.*;
-import bank.graphql.client.models.Root;
 import com.google.gson.Gson;
 
 import java.io.IOException;
@@ -15,9 +14,11 @@ public class GraphQLDriver implements BankDriver {
     private static Gson gson;
 
     @Override
-    public void connect(String[] strings) throws IOException {
+    public void connect(String[] args) throws IOException {
+        var host = args[0];
+        var port = Integer.parseInt(args[1]);
         try {
-            client = new GraphQLClient("http://localhost:8080/graphql");
+            client = new GraphQLClient("http://" + host + ":" + port + "/graphql");
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
@@ -39,36 +40,32 @@ public class GraphQLDriver implements BankDriver {
 
         @Override
         public String createAccount(String s) throws IOException {
-            client.applyRequest("mutation {\n" +
+            client.sendRequest("mutation {\n" +
                     "  createAccount(owner: \"" + s + "\") {\n" +
                     "    number\n" +
                     "  }\n" +
                     "}\n");
-            var jsonString = client.extractJsonBody();
-            var root = gson.fromJson(jsonString, Root.class);
+            var root = client.getJsonRoot();
             return root.data.createAccount.number;
         }
 
         @Override
         public boolean closeAccount(String s) throws IOException {
-            client.applyRequest("mutation { " +
+            client.sendRequest("mutation { " +
                     "closeAccount(number: \"" + s + "\")" +
                     "}");
-            var jsonString = client.extractJsonBody();
-            var root = gson.fromJson(jsonString, Root.class);
+            var root = client.getJsonRoot();
             return root.data.closeAccount;
         }
 
         @Override
         public Set<String> getAccountNumbers() throws IOException {
-            client.applyRequest("query {" +
+            client.sendRequest("query {" +
                     "accounts {" +
                     "number" +
                     "}" +
                     "}");
-            var jsonString = client.extractJsonBody();
-            var root = gson.fromJson(jsonString, Root.class);
-
+            var root = client.getJsonRoot();
             //change datatype to Set<String>
             var result = new HashSet<String>();
             for (var number : root.data.accounts) {
@@ -79,13 +76,11 @@ public class GraphQLDriver implements BankDriver {
 
         @Override
         public Account getAccount(String s) throws IOException {
-            client.applyRequest("{ account(number: \"" + s + "\") {" +
+            client.sendRequest("{ account(number: \"" + s + "\") {" +
                     "owner" +
                     "}" +
                     "}");
-            var jsonString = client.extractJsonBody();
-            var root = gson.fromJson(jsonString, Root.class);
-
+            var root = client.getJsonRoot();
             if (root.data.account == null) return null;
             return new Account(s);
         }
@@ -95,13 +90,13 @@ public class GraphQLDriver implements BankDriver {
 
             if (v < 0) throw new IllegalArgumentException("amount is not allowed to be negative");
             //idk why this is needed but without this line it always complains about missing exception, even though I pass all exceptions to the client
-            if (!account.isActive() || !account1.isActive()) throw new InactiveException("One of the accounts is not active");
+            if (!account.isActive() || !account1.isActive())
+                throw new InactiveException("One of the accounts is not active");
 
-            client.applyRequest("mutation { " +
+            client.sendRequest("mutation { " +
                     "transfer(from: \"" + account.getNumber() + "\", to: \"" + account1.getNumber() + "\" , amount: " + v + ")" +
                     "}");
-            var jsonString = client.extractJsonBody();
-            var root = gson.fromJson(jsonString, Root.class);
+            var root = client.getJsonRoot();
 
             if ("bank.InactiveException".equals(root.data.deposit)) {
                 throw new InactiveException("account is not active");
@@ -128,23 +123,21 @@ public class GraphQLDriver implements BankDriver {
 
         @Override
         public String getOwner() throws IOException {
-            client.applyRequest("{ account(number: \"" + number + "\") {" +
+            client.sendRequest("{ account(number: \"" + number + "\") {" +
                     "owner" +
                     "}" +
                     "}");
-            var jsonString = client.extractJsonBody();
-            var root = gson.fromJson(jsonString, Root.class);
+            var root = client.getJsonRoot();
             return root.data.account.getOwner();
         }
 
         @Override
         public boolean isActive() throws IOException {
-            client.applyRequest("{ account(number: \"" + number + "\") {" +
+            client.sendRequest("{ account(number: \"" + number + "\") {" +
                     "active" +
                     "}" +
                     "}");
-            var jsonString = client.extractJsonBody();
-            var root = gson.fromJson(jsonString, Root.class);
+            var root = client.getJsonRoot();
             return root.data.account.getActive();
         }
 
@@ -153,11 +146,10 @@ public class GraphQLDriver implements BankDriver {
 
             if (v < 0) throw new IllegalArgumentException("amounts are not allowed to be negative");
 
-            client.applyRequest("mutation { " +
+            client.sendRequest("mutation { " +
                     "deposit(number: \"" + number + "\", amount: " + v + ")" +
                     "}");
-            var jsonString = client.extractJsonBody();
-            var root = gson.fromJson(jsonString, Root.class);
+            var root = client.getJsonRoot();
 
             if ("bank.InactiveException".equals(root.data.deposit)) {
                 throw new InactiveException("account is not active");
@@ -169,11 +161,10 @@ public class GraphQLDriver implements BankDriver {
 
             if (v < 0) throw new IllegalArgumentException("amounts are not allowed to be negative");
 
-            client.applyRequest("mutation { " +
+            client.sendRequest("mutation { " +
                     "withdraw(number: \"" + number + "\", amount: " + v + ")" +
                     "}");
-            var jsonString = client.extractJsonBody();
-            var root = gson.fromJson(jsonString, Root.class);
+            var root = client.getJsonRoot();
 
             if ("bank.InactiveException".equals(root.data.deposit)) {
                 throw new InactiveException("account is not active");
@@ -185,12 +176,11 @@ public class GraphQLDriver implements BankDriver {
 
         @Override
         public double getBalance() throws IOException {
-            client.applyRequest("{ account(number: \"" + number + "\") {" +
+            client.sendRequest("{ account(number: \"" + number + "\") {" +
                     "balance" +
                     "}" +
                     "}");
-            var jsonString = client.extractJsonBody();
-            var root = gson.fromJson(jsonString, Root.class);
+            var root = client.getJsonRoot();
             return root.data.account.getBalance();
         }
     }

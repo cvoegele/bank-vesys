@@ -1,5 +1,6 @@
 package bank.graphql.client;
 
+import bank.graphql.client.models.Root;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -28,7 +29,7 @@ public class GraphQLClient {
         gson = new GsonBuilder().setPrettyPrinting().create();
     }
 
-    public void applyRequest(String query1) throws IOException {
+    public void sendRequest(String query1) throws IOException {
         String requestBody = objectMapper
                 .writerWithDefaultPrettyPrinter()
                 .writeValueAsString(new Query(query1));
@@ -46,30 +47,11 @@ public class GraphQLClient {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-//        System.out.println("Statuscode: " + response.statusCode());
-//        System.out.println("Headers:");
-//        response.headers().map().forEach((k,v) -> System.out.println(k + ": " + v));
-//        System.out.println("Body:");
-//        System.out.println(response.body());
-//
-//
-//          System.out.println("\n"+gson.toJson(gson.fromJson(response.body(), Object.class)));
-//        return response.body();
     }
 
-    public String extractJsonBody() {
-//        if (lastResponse != null)
-//            return gson.fromJson(lastResponse.body(), type);
-//        return null;
-//        JsonReader reader = new JsonReader(new StringReader(lastResponse.body()));
-//        return reader;
-        return lastResponse.body();
+    public Root getJsonRoot() {
+        return gson.fromJson(lastResponse.body(),Root.class);
     }
-
-    public void clearResponse() {
-        lastResponse = null;
-    }
-
 
     static class Query {
         private final String query;

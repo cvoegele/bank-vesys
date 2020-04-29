@@ -1,6 +1,5 @@
 package bank.graphql.client;
 
-import bank.graphql.client.models.Root;
 import com.google.gson.Gson;
 
 import java.io.IOException;
@@ -23,11 +22,10 @@ public class TestClient {
 //            Root root = gson.fromJson(jsonString, Root.class);
 //            System.out.println(root.data.createAccount.number);
 //            //System.out.println(response.data.accounts[0]);
-            client.applyRequest("mutation { " +
+            client.sendRequest("mutation { " +
                     "closeAccount(number: \"" + s + "\")" +
                     "}");
-            var jsonString = client.extractJsonBody();
-            var root = gson.fromJson(jsonString, Root.class);
+            var root = client.getJsonRoot();
             System.out.println(root.data.closeAccount);
         } catch (Exception e) {
             throw new IOException(e);
