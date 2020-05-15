@@ -83,8 +83,8 @@ public class Driver implements BankDriver {
     }
 
     private static class Account implements bank.Account {
-        private String number; // XXX ich würde number und owner final deklarieren.
-        private String owner;
+        private final String number; // XXX ich würde number und owner final deklarieren.
+        private final String owner;
         private double balance;
         private boolean active = true;
 

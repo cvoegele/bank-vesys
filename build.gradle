@@ -9,10 +9,6 @@ repositories {
     flatDir { dirs 'lib' }
 }
 
-mainClassName = 'bank.BankLauncher'
-
-sourceCompatibility = 11
-targetCompatibility = 11
 compileJava.options.encoding = 'UTF-8'
 compileTestJava.options.encoding = 'UTF-8'
 
@@ -31,6 +27,8 @@ dependencies {
     implementation "org.openjfx:javafx-graphics:11:${platform}"
     implementation "org.openjfx:javafx-controls:11:${platform}"
     implementation "org.openjfx:javafx-swing:11:${platform}"
+
+    implementation 'com.typesafe.akka:akka-remote_2.13:2.6.5'
 }
 
 dependencies {
